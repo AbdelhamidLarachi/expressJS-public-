@@ -11,14 +11,14 @@ var cors = require('cors');
 
 
   var firebaseConfig = {
-    apiKey: "AIzaSyCJspcGFWTVoMurYiq5F7nh4O3K57iT6dM",
+    apiKey: "null",
     authDomain: "rapid-sms.firebaseapp.com",
     databaseURL: "https://rapid-sms.firebaseio.com",
     projectId: "rapid-sms",
     storageBucket: "rapid-sms.appspot.com",
-    messagingSenderId: "235969149846",
-    appId: "1:235969149846:web:d824d6ffaea450d1d03bb7",
-    measurementId: "G-1JFTH3PD9V"
+    messagingSenderId: "null",
+    appId: "1:null:web:nul",
+    measurementId: "G-null"
   };
 
     firebase.initializeApp(firebaseConfig);
@@ -45,8 +45,8 @@ function sendSMS(code, tel) {
 var transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'feelmystyle711@gmail.com',
-    pass: 'Larachi711Youtube'
+    user: 'null@gmail.com',
+    pass: 'null'
   }
 });
 
@@ -67,7 +67,7 @@ transporter.use('compile', hbs(handlebarsOptions));
 function sendEmail(userEmail,username) {
 
 var mailOptions = {
-  from: 'feelmystyle711@gmail.com',
+  from: 'null@gmail.com',
   to: userEmail,
   subject: 'Confirmer votre Adresse-email',
   template: 'confirmation',
@@ -94,7 +94,7 @@ const conn = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'root',
-  database: 'offres_telecom'
+  database: 'null'
 });
  
 //connect to database
@@ -106,270 +106,13 @@ conn.connect((err) =>{
 // login  _____________________________________________________________________________________________________________
 
 
-app.post('/api/login',(req, res) => {
-  let email_check = "SELECT email_address FROM users WHERE email_address='"+req.body.email_address+"'";
-  let pswd_match = "SELECT * FROM users WHERE email_address='"+req.body.email_address+"' AND pswd ='"+req.body.password+"'";
-
-  let mail_query = conn.query(email_check,(err, results) => {
-    if(err) throw err;
-    if (results.length == 0){
-          res.send(JSON.stringify({"status": 301, "header": "Verifier vos informations", "error": "Cet adresse e-mail n'existe pas!"}));
-    }
-    else {
-        let pswd_query = conn.query(pswd_match,(err, results) => {
-              if(err) throw err;
-              if (results.length == 0){
-          res.send(JSON.stringify({"status": 301, "header": "Verifier vos informations", "error": "Mot de passe incorrect!"}));
-    }
-    else {
-    	      if (results[0].subscription_length>0){
-    	      	 res.send(JSON.stringify({"status": 200, "error": null, "message": 'logged_in', "response": results}));
-}
-else {
-          res.send(JSON.stringify({"status": 300, "header": "Abonnement Expiré", "error": "Vous devez recharcher votre abonnement!"}));
-
-}
-    }
-
-});
-    }
-  });
-});
- 
-
-
 // registration  _____________________________________________________________________________________________________________
-
  
- app.post('/api/register',(req, res) => {
-
-
-  let get_token = "SELECT * FROM tokens WHERE token='"+req.body.voucher+"'";
-  let email_check = "SELECT email_address FROM users WHERE email_address='"+req.body.email_address+"'";
-
-  let mail_query = conn.query(email_check,(err, results) => {
-    if(err) throw err;
-    if (results.length > 0){
-          res.send(JSON.stringify({"error": 400, "header": "Adresse-email déja utilisé!", "body": "Avez-vous déja un compte?"}));
-    }
-   
-else {
-let get_token_query = conn.query(get_token,(err, results) => {
-    if(err) throw err;
-
-if (results.length <= 0){
-          res.send(JSON.stringify({"error": 303, "header": 'Voucher Incorrect', "body": "Vous devez entrer un voucher valide afin de s'inscrire!"}));
-      }
- else if (results.length > 0){
-      if (results[0].state==1){
-          res.send(JSON.stringify({"error": 304, "header": 'Voucher Expiré', "body": "Ce voucher a été expiré ou déja utilisé!"}));
-      }
-      if (results[0].state==0){
-
-    let sql = "UPDATE tokens SET state="+1+" WHERE token='"+req.body.voucher+"'";
-    let query = conn.query(sql, (err) => {
-    if(err) throw err;
-  });
-
-    let token_length = results[0].length;
-    let data = {username: req.body.username, fonction: req.body.fonction, organisation: req.body.organisation, tel: req.body.tel, email_address: req.body.email_address, pswd: req.body.password, subscription_length: token_length};
-    let insert_data = "INSERT INTO users SET ?";
-    let insert_data_query = conn.query(insert_data, data,(err, results) => {
-    if(err) throw err;
-          sendEmail(req.body.email_address, req.body.username);
-          res.send(JSON.stringify({"status": 200, "error": null, "length": token_length, "message": 'User_registred!', "response": results}));
-  });
-
-}
-}
-
-});
-}
-    })
-
-});
-
-
-app.post('/api/checkMail',(req, res) => {
-
-  let email_check = "SELECT email_address FROM users WHERE email_address='"+req.body.email_address+"'";
-
-  let mail_query = conn.query(email_check,(err, results) => {
-    if(err) throw err;
-    if (results.length > 0){
-          res.send(JSON.stringify({"status": 400}));
-    }
-   
-else {
-          res.send(JSON.stringify({"status": 200}));
-
-}
-    })
-});
-    
-
-
- app.post('/api/sendSMS',(req) => {
-
-  var vkey = Math.random().toString(36).substring(2, 5) + Math.random().toString(36).substring(2, 5); // Generate vkey
-  let get_last_vkey = "SELECT vkey FROM users WHERE tel='"+req.body.tel+"' AND vkey IS NOT NULL";
-  let requestSMS = "UPDATE users SET vkey='"+vkey+"', verified="+0+" WHERE tel='"+req.body.tel+"' OR email_address='"+req.body.email+"'";
-
-if (req.body.newKey) {
-
-  let requestSMSQuery = conn.query(requestSMS,(err, results) => {
-    if(err) throw err;
-        sendSMS(vkey, req.body.tel);
-     })
-}
-else {
-
- let vkeyQuery = conn.query(get_last_vkey,(err, results) => {
-    if(err) throw err;
-    if (results.length > 0){
-        sendSMS(results[0].vkey, req.body.tel);
-    }
-   
-else {
-
-  let requestSMSQuery = conn.query(requestSMS,(err, results) => {
-    if(err) throw err;
-        sendSMS(vkey, req.body.tel);
-     })
-    }
-  })
-
-}
-
-});
-
-
-
-
-app.post('/api/verify',(req, res) => {
-  let vkey_check = "SELECT email_address FROM users WHERE vkey='"+req.body.vkey+"'";
-  var email_verify;
-
-
-  if (req.body.newPhone!=null) {
-      email_verify = "UPDATE users SET verified="+1+", tel='"+req.body.newPhone+"' WHERE vkey='"+req.body.vkey+"'";
-  }
-  else {
-      email_verify = "UPDATE users SET verified="+1+" WHERE vkey='"+req.body.vkey+"'";
-  }
-
-  let vkey_check_query = conn.query(vkey_check,(err, results) => {
-    if(err) throw err;
-if (results.length > 0){
-  let email_verify_query = conn.query(email_verify,(err, results) => {
-    if(err) throw err;
-          res.send(JSON.stringify({"status": 200}));
-    })
-}
-    else {
-          res.send(JSON.stringify({"status": 400}));
-
-    }
-    })
-});
-
-
-app.post('/api/checkSentCode',(req, res) => {
-   let info=[req.body.tel, req.body.vkey];
-   let sql = "SELECT tel, vkey FROM offres WHERE tel = ? AND vkey = ?"
-   let query = conn.query(sql, info, (err, results) => {
-    if(err) throw err;
-    if(results.length>0){
-    res.send(JSON.stringify({"status": 200, "error": null}));
-    }
-else {
-    res.send(JSON.stringify({"status": 404, "error": 'code incorrect'}));
-    }
-  });
-});
- 
-
-app.post('/api/subscribtion',(req, res) => {
-  let subscribtion_length = "SELECT subscription_length, tel FROM users WHERE email_address='"+req.body.email_address+"'";
-
-  let subscribtion_length_query = conn.query(subscribtion_length,(err, results) => {
-    if(err) throw err;
-    if (results[0].subscription_length > 0){
-          res.send(JSON.stringify({"status": 200, "length": results[0].subscription_length, "tel": results[0].tel}));
-    }
-else {
-          res.send(JSON.stringify({"status": 400}));
-
-}
-    })
-});
-
-app.post('/api/recharge',(req, res) => {
-    let get_token = "SELECT * FROM tokens WHERE token='"+req.body.voucher+"'";
-
-
-  let get_token_query = conn.query(get_token,(err, results) => {
-    if(err) throw err;
-
-    if (results.length>0){
-    let tokenLength = results[0].length;
-
-    if (results[0].state==0){          // success
-
-    let use_token = "UPDATE tokens SET state="+1+" WHERE token='"+req.body.voucher+"'";
-    let use_token_query = conn.query(use_token,(err, results) => {
-    if(err) throw err;
-    })
-
-    let getTokenLength = "SELECT subscription_length FROM users WHERE email_address='"+req.body.email_address+"'";
-
-    let getTokenLength_query = conn.query(getTokenLength,(err, results) => {
-    if(err) throw err;
-    let sub_length = tokenLength + results[0].subscription_length;
-    let extend_sub = "UPDATE users SET subscription_length="+sub_length+" WHERE email_address='"+req.body.email_address+"'";
-    let extend_sub_query = conn.query(extend_sub,(err, results) => {
-    if(err) throw err;
-    res.send(JSON.stringify({"status": 200, 'error': null}));
-    })    
-  })
-}
-
-else {         // used token
-    res.send(JSON.stringify({"error": 401, "header": 'Voucher Expiré', "error_description": "Ce voucher a été expiré ou déja utilisé!"}));
-
-}
-}
-    else if (results.length==0){         // incorrect token
-    res.send(JSON.stringify({"error": 301, "header": 'Voucher Incorrect', "error_description": "Vous devez entrer un voucher valide!"}));
-
-}
-    })
-});
-
-
-
-
-
-app.post('/api/setPassword',(req, res) => {
-  console.log(req.body.tel)
-      let setPassword = "UPDATE users SET pswd='"+req.body.newPassword+"' WHERE email_address='"+req.body.email_address+"' AND pswd='"+req.body.oldPassword+"'";
-  
-  if(req.body.tel!=null && req.body.tel != undefined && req.body.tel != ''){
-    setPassword = "UPDATE users SET pswd='"+req.body.newPassword+"' WHERE tel="+req.body.tel;
-}
-
-  let updateQuery = conn.query(setPassword,(err, results) => {
-      console.log(setPassword)
-    if(err) throw err;
-          res.send(JSON.stringify({"status": 200}));
-    })
-});
 
 
 
 
 app.post('/api/setFavorite',(req, res) => {
-              console.log('setFavorite email : ' + req.body.email_address);                                 
 
     let getItems = "SELECT favorite FROM users WHERE email_address='"+req.body.email_address+"'";
     let items; // all items to add
@@ -424,17 +167,17 @@ app.post('/api/setFavorite',(req, res) => {
     console.log(results[0].favorite);
 
   if (results.length==1) {
-        console.log('toString');
+  if(results[0].favorite!=null){
+
     var favoriteItems = results[0].favorite.toString();  
-            console.log('to Split');
     let itemsID = results[0].favorite.split(',');    // split and convert to array
 
     let favorites = "SELECT * FROM offres WHERE id IN ("+favoriteItems+")";
     let getItemsQuery = conn.query(favorites,(err, results) => {
     if(err) throw err;
-    console.log('offre ID is :' + results[0].id);
           res.send(JSON.stringify({"status": 200, 'response': results, "itemsID": itemsID}));
     })
+  }
   }
   else{
     res.send(JSON.stringify({"status": 400, "error": 'no_items'}));
@@ -526,9 +269,8 @@ app.post('/api/adminlogin',(req, res) => {
 
 app.post('/api/getid',(req, res) => {
   
-  console.log('user email from getid = ' + req.body.email);
   let email=[req.body.email];
-  let sql = "SELECT id,survey FROM users WHERE email_address=?"
+  let sql = "SELECT id,survey FROM users WHERE email_address=  ?"
   let query = conn.query(sql, email,(err, results) => {
     if(err) throw err;
     res.send(JSON.stringify({"status": 200, "error": null, "results": results}));
@@ -538,20 +280,20 @@ app.post('/api/getid',(req, res) => {
 
 app.post('/api/submitSurvey',(req, res) => {
   let insert;
-  let get = "SELECT userID FROM survey WHERE userID="+req.body.id;
-  let getQuery = conn.query(get,(err, results) => {
+  let id=[req.body.id];
+  let get = "SELECT userID FROM survey WHERE userID = ?";
+  let getQuery = conn.query(get, id,(err, results) => {
     if(err) throw err;
       console.log(results.length);
 
     if(results.length==1){
-    insert = "UPDATE survey SET ? WHERE userID="+req.body.id;
+    insert = "UPDATE survey SET ? WHERE userID = ?";
     let review = {userID: req.body.id, service: req.body.review.service, costs: req.body.review.costs, suggestion: req.body.review.suggestion};
     let insertQuery = conn.query(insert, review,(err, results) => {
     if(err) throw err;
     });
 
-    let id=[req.body.id];
-    updateSurvey = "UPDATE users SET survey=1 WHERE id=?";
+    updateSurvey = "UPDATE users SET survey=1 WHERE id = ?";
     let updateSurveyState = conn.query(updateSurvey, id,(err, results) => {
     if(err) throw err;
   });
@@ -564,8 +306,7 @@ app.post('/api/submitSurvey',(req, res) => {
     if(err) throw err;
   });
 
-    let id=[req.body.id];
-    updateSurvey = "UPDATE users SET survey=1 WHERE id=?";
+    updateSurvey = "UPDATE users SET survey=1 WHERE id = ?";
     let updateSurveyState = conn.query(updateSurvey, id,(err, results) => {
     if(err) throw err;
   });
